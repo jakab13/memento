@@ -1,6 +1,5 @@
 import pathlib
 import os
-import random
 import numpy as np
 import slab
 import time
@@ -11,6 +10,7 @@ from functools import partial
 import freefield
 from config import TALKERS, CALL_SIGNS, COLOURS, NUMBERS, COL_TO_HEX, TARGET_SEGMENT_LENGTH, SEGMENT_LENGTHS, STIM_MODEL
 from utils import get_params, get_stimulus, reverse_sound, combine_sounds
+from analysis import print_current_score
 
 SAMPLERATE = 48828
 
@@ -62,9 +62,9 @@ class Experiment:
             self.trial_seq.__next__()
             if self.task == "single_source":
                 target_params = get_params(exclude=self.prev_target_params)
-                target_params["segment_length"] = self.trial_seq.this_trial
                 target = get_stimulus(target_params)
                 if self.is_reversed:
+                    target_params["segment_length"] = self.trial_seq.this_trial
                     target, target_reverse_seed = reverse_sound(target, target_params["segment_length"])
                     target_params["reverse_seed"] = target_reverse_seed
                 masker = slab.Binaural.silence(duration=target.n_samples, samplerate=target.samplerate)
@@ -103,7 +103,7 @@ class Experiment:
                     freefield.write(tag="data1", value=masker.left.data, processors="RX81")
                     freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX81")
                 elif self.plane == "elevation":
-                    masker_params["speaker_id"] = 5
+                    masker_params["speaker_id"] = 4
                     freefield.write(tag="data0", value=target.left.data, processors="RX81")
                     freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
                     freefield.write(tag="data1", value=masker.left.data, processors="RX81")
@@ -111,9 +111,11 @@ class Experiment:
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 
+            freefield.write(tag='bitmask', value=1, processors='RX81')
             trial_timestamp = time.time()
             freefield.play()
             freefield.wait_to_finish_playing()
+            freefield.write(tag='bitmask', value=0, processors='RX81')
 
             self.end_stim_timestamp = time.time()
             freefield.write(tag="data0", value=np.zeros(target.n_samples), processors="RX81")
@@ -131,6 +133,7 @@ class Experiment:
             freefield.write(tag="chan0", value=1, processors="RX81")
             freefield.play()
             print("End of task")
+            print_current_score(subject_id=self.subject_id)
             freefield.wait_to_finish_playing()
             freefield.write(tag="data0", value=np.zeros(end_sound.n_samples), processors="RX81")
 
@@ -146,6 +149,10 @@ class Experiment:
             print("Response:\t\t", response_params["colour"], response_params["number"])
         if self.results_file and not self.trial_seq.this_n < 0:
             response_params["timestamp"] = time.time()
+            response_params["colour_correct"] = self.prev_target_params["colour"] == response_params["colour"]
+            response_params["number_correct"] = self.prev_target_params["number"] == response_params["number"]
+            response_params["score"] = (response_params["colour_correct"] * len(COLOURS) +
+                                        response_params["number_correct"] * len(NUMBERS)) / (len(COLOURS) + len(NUMBERS))
             self.results_file.write(response_params, tag="response_params")
         self.run_trial()
 
