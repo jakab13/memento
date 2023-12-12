@@ -9,14 +9,14 @@ from scipy.stats import linregress
 
 pd.options.mode.chained_assignment = None
 sns.set_theme()
-results_folder = pathlib.Path(os.getcwd()) / "Results"
+results_folder = pathlib.Path(os.getcwd()) / "Results" / "pilot_freefield"
 
 
 def load_df():
-    # subjects_excl = ["test", "holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
+    subjects_excl = ["test", "redundant"]
 
     subjects = [s for s in os.listdir(results_folder) if not s.startswith('.')]
-    # subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
+    subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
 
     results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.')] for s in subjects}
 
@@ -121,8 +121,7 @@ def plot_results(subject_id=None, task_type="multi_source"):
             x="masker_segment_length",
             y="score",
             hue="task_plane",
-            errorbar="sd",
-            scatter=False
+            errorbar="sd"
         )
         title = subject_id or "all subjects"
         ax.set_title(f"Temporal unmasking ({title})")
