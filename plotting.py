@@ -8,6 +8,9 @@ from sklearn import metrics
 df = pd.read_csv("memento_pilot.csv")
 final_subjects = ["pilot_jakab", "pilot_zofia", "pilot_lukas"]
 df_single_source = df[df["task_type"] == "single_source"]
+df_single_source_final = df_single_source[df_single_source.subject_id.isin(final_subjects)]
+df_multi_source = df[df["task_type"] == "multi_source"]
+df_multi_source_final = df_multi_source[df_multi_source.subject_id.isin(final_subjects)]
 
 for subject_id in df_single_source.subject_id.unique():
     df_sub = df_single_source[df_single_source["subject_id"] == subject_id]
@@ -22,13 +25,9 @@ for subject_id in df_single_source.subject_id.unique():
     plt.title(title)
     plt.show()
 
-df_multi_source = df[df["task_type"] == "multi_source"]
-
 g = sns.FacetGrid(df_multi_source, col="subject_id", col_wrap=3, hue="task_plane", sharex=False)
 g.map(sns.pointplot, "masker_segment_length", "score")
 g.add_legend()
-
-df_multi_source_final = df_multi_source[df_multi_source.subject_id.isin(final_subjects)]
 
 sns.pointplot(
     data=df_multi_source_final,
