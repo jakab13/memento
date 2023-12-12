@@ -2,9 +2,9 @@
 # TODO save settings as slab config files
 
 from experiment import *
-from analysis import plot_results, print_multi_source_linear_model
+from analysis import plot_results
 
-subject_id = "pilot_varvara"
+subject_id = "pilot_lukas"
 
 exp = Experiment(subject_id)
 
@@ -27,4 +27,3 @@ exp.run_task(task="multi_source", phase="experiment", plane="colocated")  # x2
 # RESULTS ===================================================================
 plot_results(subject_id=subject_id, task_type="single_source")
 plot_results(subject_id=subject_id, task_type="multi_source")
-print_multi_source_linear_model(subject_id=subject_id)

@@ -103,11 +103,11 @@ class Experiment:
                     freefield.write(tag="data1", value=masker.left.data, processors="RX81")
                     freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX81")
                 elif self.plane == "elevation":
-                    masker_params["speaker_id"] = 4
+                    masker_params["speaker_id"] = 18
                     freefield.write(tag="data0", value=target.left.data, processors="RX81")
                     freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
-                    freefield.write(tag="data1", value=masker.left.data, processors="RX81")
-                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX81")
+                    freefield.write(tag="data1", value=masker.left.data, processors="RX82")
+                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX82")
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 
@@ -120,6 +120,7 @@ class Experiment:
             self.end_stim_timestamp = time.time()
             freefield.write(tag="data0", value=np.zeros(target.n_samples), processors="RX81")
             freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX81")
+            freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX82")
             trial_params = {"timestamp": trial_timestamp, "index": self.trial_seq.this_n}
             self.results_file.write(trial_params, tag="trial_params")
             self.results_file.write(target_params, tag="target_params")
@@ -133,7 +134,7 @@ class Experiment:
             freefield.write(tag="chan0", value=1, processors="RX81")
             freefield.play()
             print("End of task")
-            print_current_score(subject_id=self.subject_id)
+            # print_current_score(subject_id=self.subject_id)
             freefield.wait_to_finish_playing()
             freefield.write(tag="data0", value=np.zeros(end_sound.n_samples), processors="RX81")
 

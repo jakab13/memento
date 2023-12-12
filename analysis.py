@@ -13,10 +13,10 @@ results_folder = pathlib.Path(os.getcwd()) / "Results"
 
 
 def load_df():
-    subjects_excl = ["test", "holubowska", "jakab", "gina"]
+    # subjects_excl = ["test", "holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
 
     subjects = [s for s in os.listdir(results_folder) if not s.startswith('.')]
-    subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
+    # subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
 
     results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.')] for s in subjects}
 
@@ -71,10 +71,17 @@ def load_df():
             df = pd.concat([df, df_curr], ignore_index=True)
     df["masker_segment_length"] = df["masker_segment_length"].astype(float)
     df["target_segment_length"] = df["target_segment_length"].astype(float)
-    df["score_colour_correct"] = df["target_colour"] == df["response_colour"]
-    df["score_number_correct"] = df["target_number"] == df["response_number"]
-    df["score"] = (df["score_colour_correct"] * len(COLOURS) + df["score_number_correct"] * len(NUMBERS)) / (len(COLOURS) + len(NUMBERS))
+    df["trial_index"] = df["trial_index"].astype(float)
+    df["colour_correct"] = df["target_colour"] == df["response_colour"]
+    df["number_correct"] = df["target_number"] == df["response_number"]
+    df["score"] = (df["colour_correct"] * len(COLOURS) + df["number_correct"] * len(NUMBERS)) / (len(COLOURS) + len(NUMBERS))
     df["score"] = df["score"].astype(float)
+    df["masker_colour_correct"] = df["masker_colour"] == df["response_colour"]
+    df["masker_number_correct"] = df["masker_number"] == df["response_number"]
+    df["score_masker"] = (df["masker_colour_correct"] * len(COLOURS) + df["masker_number_correct"] * len(NUMBERS)) / (
+                len(COLOURS) + len(NUMBERS))
+    df["score_masker"] = df["score_masker"].astype(float)
+    df["response_time_diff"] = df["response_timestamp"] - df["trial_timestamp"]
     return df
 
 
@@ -87,7 +94,7 @@ def print_current_score(subject_id=None):
         print(subject_id, "current average is:", f"{round(mean, 2) * 100}%")
 
 
-def plot_results(subject_id=None, task_type="single_source"):
+def plot_results(subject_id=None, task_type="multi_source"):
     df = load_df()
     df = df[df["subject_id"] == subject_id] if subject_id is not None else df
     df = df[df["task_phase"] == "experiment"]
@@ -115,8 +122,7 @@ def plot_results(subject_id=None, task_type="single_source"):
             y="score",
             hue="task_plane",
             errorbar="sd",
-            scatter=False,
-            facet_kws={'legend_out': True}
+            scatter=False
         )
         title = subject_id or "all subjects"
         ax.set_title(f"Temporal unmasking ({title})")

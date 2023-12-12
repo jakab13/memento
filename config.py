@@ -41,8 +41,8 @@ COL_TO_HEX = {
     "White": "#FFFFFF",
     "Green": "#1C7C54"
 }
-SEGMENT_LENGTHS = [0.03, 0.05, 0.07, 0.09, 0.11]
-TARGET_SEGMENT_LENGTH = 0.07
+SEGMENT_LENGTHS = [0.03, 0.06, 0.09, 0.12, 0.15]
+TARGET_SEGMENT_LENGTH = 0.06
 STIM_MODEL = {
     "talker_id": None,
     "call_sign": None,
