@@ -53,6 +53,7 @@ class Experiment:
         self.master.geometry('%dx%d+%d+%d' % (1280, 720, 0, 0))
         self.myFont = tkFont.Font(root=self.master, family='Helvetica', size=36, weight=tkFont.BOLD)
         self.master.configure(background='#373F51')
+        self.master.attributes("-fullscreen", True)
         self.generate_numpad()
         self.master.mainloop()
 
@@ -81,33 +82,37 @@ class Experiment:
                 target_params["reverse_seed"] = target_reverse_seed
                 masker_params["reverse_seed"] = masker_reverse_seed
             masker.level, target.level = self.level, self.level
-            target_params["speaker_id"] = 1
+            target_params["speaker_chan"] = 1
+            target_params["speaker_proc"] = "RX81"
             playbuflen = max(target.n_samples, masker.n_samples)
             freefield.write(tag="playbuflen", value=playbuflen, processors="RX81")
             if self.task == "single_source":
-                freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
+                freefield.write(tag="data0", value=target.left.data, processors=target_params["speaker_proc"])
+                freefield.write(tag="chan0", value=target_params["speaker_chan"], processors=target_params["speaker_proc"])
                 freefield.write(tag="data1", value=masker.left.data, processors="RX81")
                 freefield.write(tag="chan1", value=99, processors="RX81")
             elif self.task == "multi_source":
-                if self.plane == "colocated":
-                    masker_params["speaker_id"] = 1
+                if self.plane == "collocated":
+                    masker_params["speaker_chan"] = 1
+                    masker_params["speaker_proc"] = "RX81"
                     combined = combine_sounds(target, masker)
                     combined.level = self.level
-                    freefield.write(tag="data0", value=combined.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
+                    freefield.write(tag="data0", value=combined.left.data, processors=target_params["speaker_proc"])
+                    freefield.write(tag="chan0", value=target_params["speaker_chan"], processors=target_params["speaker_proc"])
                 elif self.plane == "azimuth":
-                    masker_params["speaker_id"] = 18
-                    freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
-                    freefield.write(tag="data1", value=masker.left.data, processors="RX81")
-                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX81")
+                    masker_params["speaker_chan"] = 18
+                    masker_params["speaker_proc"] = "RX81"
+                    freefield.write(tag="data0", value=target.left.data, processors=target_params["speaker_proc"])
+                    freefield.write(tag="chan0", value=target_params["speaker_chan"], processors=target_params["speaker_proc"])
+                    freefield.write(tag="data1", value=masker.left.data, processors=masker_params["speaker_proc"])
+                    freefield.write(tag="chan1", value=masker_params["speaker_chan"], processors=masker_params["speaker_proc"])
                 elif self.plane == "elevation":
-                    masker_params["speaker_id"] = 18
-                    freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
-                    freefield.write(tag="data1", value=masker.left.data, processors="RX82")
-                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX82")
+                    masker_params["speaker_chan"] = 18
+                    masker_params["speaker_proc"] = "RX82"
+                    freefield.write(tag="data0", value=target.left.data, processors=target_params["speaker_proc"])
+                    freefield.write(tag="chan0", value=target_params["speaker_chan"], processors=target_params["speaker_proc"])
+                    freefield.write(tag="data1", value=masker.left.data, processors=masker_params["speaker_proc"])
+                    freefield.write(tag="chan1", value=masker_params["speaker_chan"], processors=masker_params["speaker_proc"])
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 

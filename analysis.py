@@ -13,19 +13,19 @@ results_folder = pathlib.Path(os.getcwd()) / "Results"
 
 
 def load_df():
-    # subjects_excl = ["test", "holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
+    subjects_excl = ["test", "holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
 
     subjects = [s for s in os.listdir(results_folder) if not s.startswith('.')]
-    # subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
+    subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
 
     results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.')] for s in subjects}
 
     columns = ["subject_id", "task_type", "task_phase", "task_plane", "task_level",
                "trial_timestamp", "trial_index",
                "target_talker_id", "target_call_sign", "target_colour", "target_number", "target_filename",
-               "target_segment_length", "target_reverse_seed", "target_speaker_id",  "target_speaker_azi",  "target_speaker_ele",
+               "target_segment_length", "target_reverse_seed", "target_speaker_chan", "target_speaker_proc",  "target_speaker_azi",  "target_speaker_ele",
                "masker_talker_id", "masker_call_sign", "masker_colour", "masker_number", "masker_filename",
-               "masker_segment_length", "masker_reverse_seed", "masker_speaker_id",  "masker_speaker_azi",  "masker_speaker_ele",
+               "masker_segment_length", "masker_reverse_seed", "masker_speaker_chan", "masker_speaker_proc",  "masker_speaker_azi",  "masker_speaker_ele",
                "response_colour", "response_number", "response_timestamp", "score"]
 
     df = pd.DataFrame(columns=columns)
@@ -56,7 +56,8 @@ def load_df():
             df_curr["target_filename"] = [target["filename"] for target in target_params]
             df_curr["target_segment_length"] = [target["segment_length"] for target in target_params]
             df_curr["target_reverse_seed"] = [target["reverse_seed"] for target in target_params]
-            df_curr["target_speaker_id"] = [target["speaker_id"] for target in target_params]
+            df_curr["target_speaker_chan"] = [target["speaker_chan"] for target in target_params]
+            df_curr["target_speaker_proc"] = [target["speaker_proc"] for target in target_params]
             df_curr["masker_talker_id"] = [masker["talker_id"] for masker in masker_params]
             df_curr["masker_call_sign"] = [masker["call_sign"] for masker in masker_params]
             df_curr["masker_colour"] = [masker["colour"] for masker in masker_params]
@@ -64,7 +65,8 @@ def load_df():
             df_curr["masker_filename"] = [masker["filename"] for masker in masker_params]
             df_curr["masker_segment_length"] = [masker["segment_length"] for masker in masker_params]
             df_curr["masker_reverse_seed"] = [masker["reverse_seed"] for masker in masker_params]
-            df_curr["masker_speaker_id"] = [masker["speaker_id"] for masker in masker_params]
+            df_curr["masker_speaker_chan"] = [masker["speaker_chan"] for masker in masker_params]
+            df_curr["masker_speaker_proc"] = [masker["speaker_proc"] for masker in masker_params]
             df_curr["response_colour"] = [response["colour"] for response in response_params]
             df_curr["response_number"] = [response["number"] for response in response_params]
             df_curr["response_timestamp"] = [response["timestamp"] for response in response_params]

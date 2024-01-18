@@ -4,7 +4,7 @@
 from experiment import *
 from analysis import plot_results
 
-subject_id = "pilot_lukas"
+subject_id = "test"
 
 exp = Experiment(subject_id)
 
@@ -21,7 +21,7 @@ exp.run_task(task="multi_source", phase="experiment", plane="azimuth")  # x2
 exp.run_task(task="multi_source", phase="experiment", plane="elevation")  # x2
 
 # MULTIPLE SENTENCES - SAME LOCATION ========================================
-exp.run_task(task="multi_source", phase="experiment", plane="colocated")  # x2
+exp.run_task(task="multi_source", phase="experiment", plane="collocated")  # x2
 
 
 # RESULTS ===================================================================
