@@ -2,11 +2,13 @@
 # TODO save settings as slab config files
 
 from experiment import *
+from localisation import Localisation
 from analysis import plot_results
 
 subject_id = "test"
 
 exp = Experiment(subject_id)
+loc = Localisation(subject_id)
 
 # INTRODUCTION ==============================================================
 exp.run_task(task="single_source", phase="intro", direction="forward")
@@ -14,13 +16,19 @@ exp.run_task(task="single_source", phase="intro", direction="forward")
 # SINGLE SENTENCE ===========================================================
 exp.run_task(task="single_source", phase="experiment", direction="reversed")  # x2
 
-# MULTIPLE SENTENCES - HORIZONTAL ===========================================
+# TWO SENTENCES - HORIZONTAL ================================================
 exp.run_task(task="multi_source", phase="experiment", plane="azimuth")  # x2
 
-# MULTIPLE SENTENCES - VERTICAL =============================================
+# LOCALISATION TEST =========================================================
+loc.run_test()
+
+# TWO SENTENCES - VERTICAL ==================================================
 exp.run_task(task="multi_source", phase="experiment", plane="elevation")  # x2
 
-# MULTIPLE SENTENCES - SAME LOCATION ========================================
+# TWO SENTENCES - FRONT-BACK ================================================
+exp.run_task(task="multi_source", phase="experiment", plane="front-back")  # x2
+
+# TWO SENTENCES - SAME LOCATION =============================================
 exp.run_task(task="multi_source", phase="experiment", plane="collocated")  # x2
 
 

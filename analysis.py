@@ -16,6 +16,7 @@ def load_df():
     subjects_excl = ["test", "holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
 
     subjects = [s for s in os.listdir(results_folder) if not s.startswith('.')]
+    subjects = ["test_gina", "test_jakab"]
     subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
 
     results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.')] for s in subjects}
