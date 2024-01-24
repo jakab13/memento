@@ -72,11 +72,14 @@ class Experiment:
             elif self.task == "multi_source":
                 target_params = get_params(pick={"call_sign": "Baron"}, exclude=self.prev_target_params)
                 target_params["segment_length"] = TARGET_SEGMENT_LENGTH
-                masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
-                masker_params["segment_length"] = self.trial_seq.this_trial
                 target = get_stimulus(target_params)
                 target, target_reverse_seed = reverse_sound(target, target_params["segment_length"])
+                masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
                 masker = get_stimulus(masker_params)
+                while abs(masker.duration - target.duration) > 0.25:
+                    masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
+                    masker = get_stimulus(masker_params)
+                masker_params["segment_length"] = self.trial_seq.this_trial
                 masker, masker_reverse_seed = reverse_sound(masker, masker_params["segment_length"])
                 target_params["reverse_seed"] = target_reverse_seed
                 masker_params["reverse_seed"] = masker_reverse_seed
@@ -108,11 +111,12 @@ class Experiment:
                 elif self.plane == "front-back":
                     masker_params["speaker_chan"] = 18
                     masker_params["speaker_proc"] = "RX82"
+                    masker.level -= 2
                     self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 
-            freefield.write(tag='bitmask', value=1, processors='RX81')
+            freefield.write(tag='bitmask', value=2, processors='RX81')
             trial_timestamp = time.time()
             freefield.play()
             freefield.wait_to_finish_playing()

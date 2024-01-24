@@ -5,7 +5,7 @@ from experiment import *
 from localisation import Localisation
 from analysis import plot_results
 
-subject_id = "test"
+subject_id = "test_jakab"
 
 exp = Experiment(subject_id)
 loc = Localisation(subject_id)
@@ -13,14 +13,14 @@ loc = Localisation(subject_id)
 # INTRODUCTION ==============================================================
 exp.run_task(task="single_source", phase="intro", direction="forward")
 
+# LOCALISATION TEST =========================================================
+loc.run_test()
+
 # SINGLE SENTENCE ===========================================================
 exp.run_task(task="single_source", phase="experiment", direction="reversed")  # x2
 
 # TWO SENTENCES - HORIZONTAL ================================================
 exp.run_task(task="multi_source", phase="experiment", plane="azimuth")  # x2
-
-# LOCALISATION TEST =========================================================
-loc.run_test()
 
 # TWO SENTENCES - VERTICAL ==================================================
 exp.run_task(task="multi_source", phase="experiment", plane="elevation")  # x2
