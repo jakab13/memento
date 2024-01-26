@@ -48,11 +48,11 @@ class Experiment:
     def initialise_UI(self, is_loc_test=False):
         self.master = tkinter.Tk()
         self.master.title("Responses")
-        # self.master.geometry('%dx%d+%d+%d' % (1000, 640, 1920, 0))
+        self.master.geometry('%dx%d+%d+%d' % (1000, 640, 1920, 0))
         self.master.geometry('%dx%d+%d+%d' % (1280, 720, 0, 0))
         self.myFont = tkFont.Font(root=self.master, family='Helvetica', size=36, weight=tkFont.BOLD)
         self.master.configure(background='#373F51')
-        # self.master.attributes("-fullscreen", True)
+        self.master.attributes("-fullscreen", True)
         self.generate_numpad()
         self.master.mainloop()
 
@@ -111,12 +111,12 @@ class Experiment:
                 elif self.plane == "front-back":
                     masker_params["speaker_chan"] = 18
                     masker_params["speaker_proc"] = "RX82"
-                    masker.level -= 2
+                    masker.level += 2
                     self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 
-            freefield.write(tag='bitmask', value=2, processors='RX81')
+            freefield.write(tag='bitmask', value=8, processors='RX81')
             trial_timestamp = time.time()
             freefield.play()
             freefield.wait_to_finish_playing()

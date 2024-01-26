@@ -26,7 +26,7 @@ exp.run_task(task="multi_source", phase="experiment", plane="azimuth")  # x2
 exp.run_task(task="multi_source", phase="experiment", plane="elevation")  # x2
 
 # TWO SENTENCES - FRONT-BACK ================================================
-exp.run_task(task="multi_source", phase="experiment", plane="front-back")  # x2
+exp.run_task(task="multi_source", phase="experiment", plane="front-back", n_reps=2)  # x2
 
 # TWO SENTENCES - SAME LOCATION =============================================
 exp.run_task(task="multi_source", phase="experiment", plane="collocated")  # x2
