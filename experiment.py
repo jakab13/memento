@@ -98,7 +98,7 @@ class Experiment:
                     masker_params["speaker_chan"] = 1
                     masker_params["speaker_proc"] = "RX81"
                     combined = combine_sounds(target, masker)
-                    combined.level = self.level
+                    combined.level = self.level + 3
                     self._load_sound(0, combined, target_params)
                 elif self.plane == "azimuth":
                     masker_params["speaker_chan"] = 18
@@ -111,7 +111,7 @@ class Experiment:
                 elif self.plane == "front-back":
                     masker_params["speaker_chan"] = 18
                     masker_params["speaker_proc"] = "RX82"
-                    masker.level += 2
+                    masker.level += 1.78
                     self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
@@ -154,9 +154,10 @@ class Experiment:
 
     @staticmethod
     def _clear_buffers(target, masker):
-        freefield.write(tag="data0", value=np.zeros(target.n_samples), processors="RX81")
-        freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX81")
-        freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX82")
+        clearbuflen = max(target.n_samples, masker.n_samples)
+        freefield.write(tag="data0", value=np.zeros(clearbuflen), processors="RX81")
+        freefield.write(tag="data1", value=np.zeros(clearbuflen), processors="RX81")
+        freefield.write(tag="data1", value=np.zeros(clearbuflen), processors="RX82")
 
     @staticmethod
     def name_to_int(name):

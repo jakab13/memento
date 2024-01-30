@@ -29,8 +29,8 @@ def reverse_sound(sound, segment_length, overlap=0.005):
         reversed_sound.data[start:end] += reversed_snippet
         idx += segment_length
     reversed_sound = reversed_sound.ramp(duration=overlap, when="offset")
-    reversed_sound.left = reversed_sound.left.filter(frequency=12000, kind="lp")
-    reversed_sound.right = reversed_sound.right.filter(frequency=12000, kind="lp")
+    reversed_sound.left = reversed_sound.left.filter(frequency=16000, kind="lp")
+    reversed_sound.right = reversed_sound.right.filter(frequency=16000, kind="lp")
     return reversed_sound, idx_seed
 
 

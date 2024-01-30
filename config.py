@@ -52,5 +52,7 @@ STIM_MODEL = {
     "filename": None,
     "segment_length": None,
     "reverse_seed": None,
-    "speaker_id": None
+    "speaker_id": None,
+    "speaker_chan": None,
+    "speaker_proc": None
 }
