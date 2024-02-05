@@ -4,6 +4,7 @@
 from experiment import *
 from localisation import Localisation
 from analysis import plot_results
+from questionnaires import difficulty_assessment
 
 subject_id = "test_jakab"
 
@@ -31,6 +32,8 @@ exp.run_task(task="multi_source", phase="experiment", plane="front-back", n_reps
 # TWO SENTENCES - SAME LOCATION =============================================
 exp.run_task(task="multi_source", phase="experiment", plane="collocated", n_reps=2)  # x2
 
+# DIFFICULTY ASSESSMENT =====================================================
+difficulty_assessment(subject_id)
 
 # RESULTS ===================================================================
 plot_results(subject_id=subject_id, task_type="single_source")
