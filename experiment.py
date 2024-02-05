@@ -8,9 +8,8 @@ from tkinter import font as tkFont
 from tkinter import ttk
 from functools import partial
 import freefield
-from config import TALKERS, CALL_SIGNS, COLOURS, NUMBERS, COL_TO_HEX, TARGET_SEGMENT_LENGTH, SEGMENT_LENGTHS, STIM_MODEL
+from config import COLOURS, NUMBERS, COL_TO_HEX, TARGET_SEGMENT_LENGTH, SEGMENT_LENGTHS, STIM_MODEL, ELE_LOC_SPEAKERS
 from utils import get_params, get_stimulus, reverse_sound, combine_sounds
-from analysis import print_current_score
 
 SAMPLERATE = 48828
 
@@ -46,13 +45,14 @@ class Experiment:
         self.master = None
         self.myFont = None
 
-    def initialise_UI(self):
+    def initialise_UI(self, is_loc_test=False):
         self.master = tkinter.Tk()
         self.master.title("Responses")
-        # self.master.geometry('%dx%d+%d+%d' % (1000, 640, 1920, 0))
+        self.master.geometry('%dx%d+%d+%d' % (1000, 640, 1920, 0))
         self.master.geometry('%dx%d+%d+%d' % (1280, 720, 0, 0))
         self.myFont = tkFont.Font(root=self.master, family='Helvetica', size=36, weight=tkFont.BOLD)
         self.master.configure(background='#373F51')
+        self.master.attributes("-fullscreen", True)
         self.generate_numpad()
         self.master.mainloop()
 
@@ -72,55 +72,58 @@ class Experiment:
             elif self.task == "multi_source":
                 target_params = get_params(pick={"call_sign": "Baron"}, exclude=self.prev_target_params)
                 target_params["segment_length"] = TARGET_SEGMENT_LENGTH
-                masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
-                masker_params["segment_length"] = self.trial_seq.this_trial
                 target = get_stimulus(target_params)
                 target, target_reverse_seed = reverse_sound(target, target_params["segment_length"])
+                masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
                 masker = get_stimulus(masker_params)
+                while abs(masker.duration - target.duration) > 0.25:
+                    masker_params = get_params(pick={"talker_id": target_params["talker_id"]}, exclude=target_params)
+                    masker = get_stimulus(masker_params)
+                masker_params["segment_length"] = self.trial_seq.this_trial
                 masker, masker_reverse_seed = reverse_sound(masker, masker_params["segment_length"])
                 target_params["reverse_seed"] = target_reverse_seed
                 masker_params["reverse_seed"] = masker_reverse_seed
             masker.level, target.level = self.level, self.level
-            target_params["speaker_id"] = 1
+            target_params["speaker_chan"] = 1
+            target_params["speaker_proc"] = "RX81"
             playbuflen = max(target.n_samples, masker.n_samples)
             freefield.write(tag="playbuflen", value=playbuflen, processors="RX81")
             if self.task == "single_source":
-                freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
+                freefield.write(tag="data0", value=target.left.data, processors=target_params["speaker_proc"])
+                freefield.write(tag="chan0", value=target_params["speaker_chan"], processors=target_params["speaker_proc"])
                 freefield.write(tag="data1", value=masker.left.data, processors="RX81")
                 freefield.write(tag="chan1", value=99, processors="RX81")
             elif self.task == "multi_source":
-                if self.plane == "colocated":
-                    masker_params["speaker_id"] = 1
+                if self.plane == "collocated":
+                    masker_params["speaker_chan"] = 1
+                    masker_params["speaker_proc"] = "RX81"
                     combined = combine_sounds(target, masker)
-                    combined.level = self.level
-                    freefield.write(tag="data0", value=combined.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
+                    combined.level = self.level + 3
+                    self._load_sound(0, combined, target_params)
                 elif self.plane == "azimuth":
-                    masker_params["speaker_id"] = 18
-                    freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
-                    freefield.write(tag="data1", value=masker.left.data, processors="RX81")
-                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX81")
+                    masker_params["speaker_chan"] = 18
+                    masker_params["speaker_proc"] = "RX81"
+                    self._load_sounds(target, target_params, masker, masker_params)
                 elif self.plane == "elevation":
-                    masker_params["speaker_id"] = 18
-                    freefield.write(tag="data0", value=target.left.data, processors="RX81")
-                    freefield.write(tag="chan0", value=target_params["speaker_id"], processors="RX81")
-                    freefield.write(tag="data1", value=masker.left.data, processors="RX82")
-                    freefield.write(tag="chan1", value=masker_params["speaker_id"], processors="RX82")
+                    masker_params["speaker_chan"] = 5
+                    masker_params["speaker_proc"] = "RX81"
+                    self._load_sounds(target, target_params, masker, masker_params)
+                elif self.plane == "front-back":
+                    masker_params["speaker_chan"] = 18
+                    masker_params["speaker_proc"] = "RX82"
+                    masker.level += 1.78
+                    self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
 
-            freefield.write(tag='bitmask', value=1, processors='RX81')
+            freefield.write(tag='bitmask', value=8, processors='RX81')
             trial_timestamp = time.time()
             freefield.play()
             freefield.wait_to_finish_playing()
             freefield.write(tag='bitmask', value=0, processors='RX81')
 
             self.end_stim_timestamp = time.time()
-            freefield.write(tag="data0", value=np.zeros(target.n_samples), processors="RX81")
-            freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX81")
-            freefield.write(tag="data1", value=np.zeros(masker.n_samples), processors="RX82")
+            self._clear_buffers(target, masker)
             trial_params = {"timestamp": trial_timestamp, "index": self.trial_seq.this_n}
             self.results_file.write(trial_params, tag="trial_params")
             self.results_file.write(target_params, tag="target_params")
@@ -137,6 +140,24 @@ class Experiment:
             # print_current_score(subject_id=self.subject_id)
             freefield.wait_to_finish_playing()
             freefield.write(tag="data0", value=np.zeros(end_sound.n_samples), processors="RX81")
+
+    @staticmethod
+    def _load_sound(tag, sound, params):
+        chan = params["speaker_chan"]
+        proc = params["speaker_proc"]
+        freefield.write(tag=f"data{tag}", value=sound.left.data, processors=proc)
+        freefield.write(tag=f"chan{tag}", value=chan, processors=proc)
+
+    def _load_sounds(self, target, target_params, masker, masker_params):
+        self._load_sound(0, target, target_params)
+        self._load_sound(1, masker, masker_params)
+
+    @staticmethod
+    def _clear_buffers(target, masker):
+        clearbuflen = max(target.n_samples, masker.n_samples)
+        freefield.write(tag="data0", value=np.zeros(clearbuflen), processors="RX81")
+        freefield.write(tag="data1", value=np.zeros(clearbuflen), processors="RX81")
+        freefield.write(tag="data1", value=np.zeros(clearbuflen), processors="RX82")
 
     @staticmethod
     def name_to_int(name):
@@ -161,6 +182,7 @@ class Experiment:
         progress_bar = ttk.Progressbar(orient="horizontal", length=820)
         progress_bar.place(x=20, y=450)
         progress_step = 100 / self.trial_seq.n_trials
+
         def clicked(response_params):
             if self.trial_seq.this_n >= 0 and self.trial_seq.n_remaining != 0:
                 progress_bar.step(progress_step)
@@ -201,4 +223,3 @@ class Experiment:
         self.results_file.write(exp_params, "exp_params")
         self.results_file.write(task_params, "task_params")
         self.initialise_UI()
-

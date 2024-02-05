@@ -42,6 +42,7 @@ COL_TO_HEX = {
     "Green": "#1C7C54"
 }
 SEGMENT_LENGTHS = [0.03, 0.06, 0.09, 0.12, 0.15]
+ELE_LOC_SPEAKERS = [19, 21, 23, 25, 27]
 TARGET_SEGMENT_LENGTH = 0.06
 STIM_MODEL = {
     "talker_id": None,
@@ -51,5 +52,7 @@ STIM_MODEL = {
     "filename": None,
     "segment_length": None,
     "reverse_seed": None,
-    "speaker_id": None
+    "speaker_id": None,
+    "speaker_chan": None,
+    "speaker_proc": None
 }
