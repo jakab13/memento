@@ -44,16 +44,31 @@ class Experiment:
         slab.set_default_level(self.level)
         self.master = None
         self.myFont = None
+        self.is_screen_on = False
 
-    def initialise_UI(self, is_loc_test=False):
+    def show_default_screen(self, prompt="Welcome to the Free Field"):
+        if self.is_screen_on:
+            self.master.destroy()
+        self.master = tkinter.Tk()
+        self.master.title("Welcome")
+        self.master.geometry('%dx%d+%d+%d' % (1280, 720, 0, 0))
+        self.myFont = tkFont.Font(root=self.master, family='Helvetica', size=20, weight=tkFont.BOLD)
+        self.master.configure(background='#373F51')
+        self.master.attributes("-fullscreen", True)
+        button = tkinter.Button(self.master, text=prompt, highlightthickness=0, bd=0, command=self.master.destroy)
+        button.pack(padx=30, pady=20)
+        button["font"] = self.myFont
+        self.master.mainloop()
+
+    def initialise_UI(self, prompt="Welcome to the Free Field"):
         self.master = tkinter.Tk()
         self.master.title("Responses")
-        self.master.geometry('%dx%d+%d+%d' % (1000, 640, 1920, 0))
         self.master.geometry('%dx%d+%d+%d' % (1280, 720, 0, 0))
         self.myFont = tkFont.Font(root=self.master, family='Helvetica', size=36, weight=tkFont.BOLD)
         self.master.configure(background='#373F51')
         self.master.attributes("-fullscreen", True)
         self.generate_numpad()
+        self.run_trial()
         self.master.mainloop()
 
     def run_trial(self):
@@ -111,7 +126,7 @@ class Experiment:
                 elif self.plane == "front-back":
                     masker_params["speaker_chan"] = 18
                     masker_params["speaker_proc"] = "RX82"
-                    masker.level += 1.78
+                    # masker.level -= 2.4
                     self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
@@ -179,8 +194,8 @@ class Experiment:
         self.run_trial()
 
     def generate_numpad(self):
-        progress_bar = ttk.Progressbar(orient="horizontal", length=820)
-        progress_bar.place(x=20, y=450)
+        progress_bar = ttk.Progressbar(orient="horizontal", length=950)
+        progress_bar.place(x=30, y=550)
         progress_step = 100 / self.trial_seq.n_trials
 
         def clicked(response_params):
@@ -202,9 +217,10 @@ class Experiment:
                     command=partial(clicked, response_params)
                 )
                 buttons[column][row]['font'] = self.myFont
-                buttons[column][row].grid(row=row, column=column, padx=20, pady=10)
+                buttons[column][row].grid(row=row, column=column, padx=30, pady=20)
 
-    def run_task(self, task="multi_source", phase="experiment", direction="reversed", plane=None, n_reps=10):
+    def run_task(self, task="multi_source", phase="experiment", direction="reversed", plane=None, n_reps=8):
+        self.show_default_screen(prompt="Start")
         self.task = task
         self.plane = plane
         self.is_reversed = True if direction == "reversed" else False
