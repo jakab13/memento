@@ -36,7 +36,7 @@ def load_df():
             path = results_folder / subject / results_file_name
             exp_params = slab.ResultsFile.read_file(path, tag="exp_params")
             task_params = slab.ResultsFile.read_file(path, tag="task_params")
-            if task_params["type"] == "loc_test":
+            if task_params["type"] == "loc_test" or task_params["type"] == "questionnaire":
                 continue
             trial_params = slab.ResultsFile.read_file(path, tag="trial_params")
             target_params = slab.ResultsFile.read_file(path, tag="target_params")

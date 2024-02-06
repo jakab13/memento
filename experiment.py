@@ -126,7 +126,7 @@ class Experiment:
                 elif self.plane == "front-back":
                     masker_params["speaker_chan"] = 18
                     masker_params["speaker_proc"] = "RX82"
-                    masker.level += 1.78
+                    # masker.level -= 2.4
                     self._load_sounds(target, target_params, masker, masker_params)
 
             print("Task", f"({self.trial_seq.this_n + 1}/{self.trial_seq.n_trials}):  \t", target_params["colour"], target_params["number"])
@@ -219,7 +219,7 @@ class Experiment:
                 buttons[column][row]['font'] = self.myFont
                 buttons[column][row].grid(row=row, column=column, padx=30, pady=20)
 
-    def run_task(self, task="multi_source", phase="experiment", direction="reversed", plane=None, n_reps=10):
+    def run_task(self, task="multi_source", phase="experiment", direction="reversed", plane=None, n_reps=8):
         self.show_default_screen(prompt="Start")
         self.task = task
         self.plane = plane

@@ -24,6 +24,7 @@ class Localisation:
         self.results_file.write(exp_params, "exp_params")
         self.results_file.write(task_params, "task_params")
         trial_seq = slab.Trialsequence(ELE_LOC_SPEAKERS, n_reps=n_reps)
+        total_score = 0
         for speaker_id in trial_seq:
             sound_params = get_params(pick={"call_sign": "Baron"})
             sound = get_stimulus(sound_params)
@@ -34,20 +35,23 @@ class Localisation:
             freefield.write(tag="chan0", value=chan, processors=proc)
             ele_name = None
             if speaker.elevation == 50.0:
-                ele_name = "extreme top"
+                ele_name = "+2"
             elif speaker.elevation == 25.0:
-                ele_name = "middle top"
+                ele_name = "+1"
             elif speaker.elevation == 0.0:
-                ele_name = "centre"
+                ele_name = "0"
             elif speaker.elevation == -25.0:
-                ele_name = "middle bottom"
+                ele_name = "-1"
             elif speaker.elevation == -50.0:
-                ele_name = "extreme bottom"
+                ele_name = "-2"
             print(f"Sound played from {ele_name}")
             freefield.play()
             freefield.wait_to_finish_playing()
-            response = input("Where did the sound come from? Correct (0) or incorrect (1)?")
+            response = input("Where did the sound come from? (-2, -1, 0, +1, +2)")
+            self.results_file.write(ele_name, "presented_elevation")
+            self.results_file.write(response, "perceived_elevation")
             trial_seq.add_response(response)
             freefield.write(tag="data0", value=np.zeros(sound.n_samples), processors=proc)
         self.results_file.write(trial_seq, "trial_seq")
         print("Done with localisation test")
+        # print("Total score:", round(total_score/trial_seq.n_trials, 2))
