@@ -139,7 +139,7 @@ class Experiment:
 
             self.end_stim_timestamp = time.time()
             self._clear_buffers(target, masker)
-            trial_params = {"timestamp": trial_timestamp, "index": self.trial_seq.this_n}
+            trial_params = {"timestamp": trial_timestamp, "index": int(self.trial_seq.this_n)}
             self.results_file.write(trial_params, tag="trial_params")
             self.results_file.write(target_params, tag="target_params")
             self.results_file.write(masker_params, tag="masker_params")

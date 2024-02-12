@@ -6,7 +6,7 @@ from localisation import Localisation
 from analysis import plot_results
 from questionnaires import difficulty_assessment
 
-subject_id = "sub_01"
+subject_id = "test_marc"
 
 exp = Experiment(subject_id)
 loc = Localisation(subject_id)
