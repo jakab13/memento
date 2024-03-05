@@ -2,7 +2,7 @@ import pandas as pd
 from analysis import load_df
 
 
-def run_pre_processing(save=True):
+def run_post_processing(save=True):
     df = load_df()
     speaker_table = pd.read_csv("speakertable_dome.csv")
     stim_features = pd.read_csv("stim_features.csv")
@@ -49,7 +49,7 @@ def run_pre_processing(save=True):
 
     df["reaction_time"] = df["response_time_diff"] - df[["target_duration", "masker_duration"]].max(axis=1)
 
-    df = df[df["reaction_time"].between(0, 20)]
+    # df = df[df["reaction_time"].between(0, 20)]
 
     if save:
         df.to_csv("reversed_speech.csv")

@@ -2,10 +2,11 @@ import pandas as pd
 import slab
 import pathlib
 import os
-from config import COLOURS, NUMBERS
+from config import TALKERS, COLOURS, NUMBERS
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
+import numpy as np
 
 pd.options.mode.chained_assignment = None
 sns.set_theme()
@@ -22,23 +23,31 @@ def load_df():
 
     columns = ["subject_id", "task_type", "task_phase", "task_plane", "task_level", "block_index",
                "trial_timestamp", "trial_index",
-               "target_talker_id", "target_call_sign", "target_colour", "target_number", "target_filename",
+               "target_talker_id", "target_talker_gender", "target_call_sign", "target_colour", "target_number", "target_filename",
                "target_segment_length", "target_reverse_seed", "target_speaker_chan", "target_speaker_proc",  "target_speaker_azi",  "target_speaker_ele",
-               "masker_talker_id", "masker_call_sign", "masker_colour", "masker_number", "masker_filename",
+               "masker_talker_id", "masker_talker_gender", "masker_call_sign", "masker_colour", "masker_number", "masker_filename",
                "masker_segment_length", "masker_reverse_seed", "masker_speaker_chan", "masker_speaker_proc",  "masker_speaker_azi",  "masker_speaker_ele",
-               "response_colour", "response_number", "response_timestamp", "score"]
+               "response_colour", "response_number", "response_timestamp", "score", "elevation_RMSE", "difficulty"]
 
     block_counter_to_block_index = {0: 0, 1: 1, 2: 2, 3: 1, 4: 2, 5: 1, 6: 2, 7: 1, 8: 2, 9: 1, 10: 2}
 
     df = pd.DataFrame(columns=columns)
 
-    for subject, results_file_list in results_files.items():
+    for subject_id, results_file_list in results_files.items():
         block_counter = 0
+        elevation_RMSE = 0
+        diff_assessment = dict()
         for results_file_name in results_file_list:
-            path = results_folder / subject / results_file_name
+            path = results_folder / subject_id / results_file_name
             exp_params = slab.ResultsFile.read_file(path, tag="exp_params")
             task_params = slab.ResultsFile.read_file(path, tag="task_params")
-            if task_params["type"] == "loc_test" or task_params["type"] == "questionnaire":
+            if task_params["type"] == "loc_test":
+                presented_elevation = np.asarray([int(i) for i in slab.ResultsFile.read_file(path, tag="presented_elevation")])
+                perceived_elevation = np.asarray([int(i) for i in slab.ResultsFile.read_file(path, tag="perceived_elevation")])
+                elevation_RMSE = np.sqrt(((perceived_elevation - presented_elevation) ** 2).mean())
+                continue
+            if task_params["type"] == "questionnaire":
+                diff_assessment = [e for e in slab.ResultsFile.read_file(path, tag="assessment")]
                 continue
             trial_params = slab.ResultsFile.read_file(path, tag="trial_params")
             target_params = slab.ResultsFile.read_file(path, tag="target_params")
@@ -56,6 +65,7 @@ def load_df():
             df_curr["trial_timestamp"] = [trial["timestamp"] for trial in trial_params]
             df_curr["trial_index"] = [trial["index"] for trial in trial_params]
             df_curr["target_talker_id"] = [target["talker_id"] for target in target_params]
+            df_curr["target_talker_gender"] = [TALKERS[target["talker_id"]] for target in target_params]
             df_curr["target_call_sign"] = [target["call_sign"] for target in target_params]
             df_curr["target_colour"] = [target["colour"] for target in target_params]
             df_curr["target_number"] = [target["number"] for target in target_params]
@@ -65,6 +75,7 @@ def load_df():
             df_curr["target_speaker_chan"] = [target.get("speaker_chan") for target in target_params]
             df_curr["target_speaker_proc"] = [target.get("speaker_proc") for target in target_params]
             df_curr["masker_talker_id"] = [masker["talker_id"] for masker in masker_params]
+            df_curr["masker_talker_gender"] = [TALKERS.get(masker["talker_id"]) for masker in masker_params]
             df_curr["masker_call_sign"] = [masker["call_sign"] for masker in masker_params]
             df_curr["masker_colour"] = [masker["colour"] for masker in masker_params]
             df_curr["masker_number"] = [masker["number"] for masker in masker_params]
@@ -76,8 +87,13 @@ def load_df():
             df_curr["response_colour"] = [response["colour"] for response in response_params]
             df_curr["response_number"] = [response["number"] for response in response_params]
             df_curr["response_timestamp"] = [response["timestamp"] for response in response_params]
+            df_curr["elevation_RMSE"] = elevation_RMSE
             df = pd.concat([df, df_curr], ignore_index=True)
             block_counter += 1
+        for d_a in diff_assessment:
+            # print(type(float(d_a["difficulty"])))
+            df.loc[(df["task_plane"] == d_a["task"]) & (df["subject_id"] == subject_id), ["difficulty"]] = float(d_a["difficulty"])
+    df["difficulty"] = pd.to_numeric(df["difficulty"])
     df["masker_segment_length"] = df["masker_segment_length"].astype(float)
     df["target_segment_length"] = df["target_segment_length"].astype(float)
     df["trial_index"] = df["trial_index"].astype(float)
@@ -91,6 +107,8 @@ def load_df():
                 len(COLOURS) + len(NUMBERS))
     df["score_masker"] = df["score_masker"].astype(float)
     df["score_TM_diff"] = df["score"] - df["score_masker"]
+    df["score_TM_diff_square"] = df["score_TM_diff"] ** 2
+    df["score_distraction"] = df["score_masker"] - df["score"]
     df["response_time_diff"] = df["response_timestamp"] - df["trial_timestamp"]
     df["task_plane"].replace("colocated", "collocated", inplace=True)
     return df
