@@ -15,16 +15,29 @@ df = pd.read_csv("reversed_speech.csv")
 df_single_source = df[df["task_type"] == "single_source"]
 df_single_source = df_single_source[df_single_source["task_phase"] == "experiment"]
 df_multi_source = df[df["task_type"] == "multi_source"]
+df_multi_source["score_TM_diff_normed"] = None
+
+df_multi_source_collocated = df_multi_source.groupby(["subject_id", "task_plane", "masker_segment_length"], as_index=False)["score_TM_diff"].mean()
+df_multi_source_collocated = df_multi_source_collocated[df_multi_source_collocated.task_plane == "collocated"]
+
+for subject_id in df_multi_source.subject_id.unique():
+    for task_plane in df_multi_source.task_plane.unique():
+        for masker_segment_length in df_multi_source.masker_segment_length.unique():
+            q_azi = (df_multi_source_collocated.subject_id == subject_id) & (df_multi_source_collocated.masker_segment_length == masker_segment_length)
+            q_all = (df_multi_source.subject_id == subject_id) & (df_multi_source.task_plane == task_plane) & (df_multi_source.masker_segment_length == masker_segment_length)
+            vals = df_multi_source.loc[q_all]["score_TM_diff"] - df_multi_source_collocated.loc[q_azi]["score_TM_diff"].values[0]
+            df_multi_source.loc[q_all, "score_TM_diff_normed"] = vals.values.tolist()
 
 for subject_id in df_single_source.subject_id.unique():
-    subject_id = "sub_20"
+    # subject_id = "sub_20"
     df_sub = df_single_source[df_single_source["subject_id"] == subject_id]
     df_sub = df_sub[df_sub["task_phase"] == "experiment"]
     plt.figure()
     fig = sns.pointplot(
         data=df_sub,
         x="target_segment_length",
-        y="score"
+        y="score",
+        errorbar=("ci", 95)
     )
     plt.ylim(0, 1.1)
     title = "Single source intelligibility (" + subject_id + ")"
@@ -37,19 +50,27 @@ g.map(sns.pointplot, "masker_segment_length", "score_masker")
 g.add_legend()
 plt.savefig("Masker score (subject grid)", dpi=400, overwrite=True)
 
-g = sns.pointplot(
+ax = sns.lineplot(
     data=df_single_source,
     x="target_segment_length",
     y="score",
-    capsize=0.05
+    errorbar=("ci", 95),
+    # capsize=0.05
     # alpha=0
 )
 title = f"Intelligibility vs segment duration (n={len(df_single_source.subject_id.unique())})"
-g.set_title(title, fontsize=16)
-g.set(xlabel="Reversed segment duration (ms)", ylabel="Score (%)", ylim=(0, 1.1))
-xticks = np.asarray(sorted(df_single_source.target_segment_length.unique()))
-g.set_xticks(range(len(xticks)), labels=(xticks * 1000).astype(int))
-plt.savefig(title, dpi=400)
+ax.set_title(title, fontsize=16)
+ax.set(xlabel="Reversed segment duration (ms)", ylabel="Score (%)", ylim=(0, 1.1))
+ax.set_xticks(np.asarray(sorted(df.masker_segment_length.dropna().unique())))
+xticks = ax.get_xticks()
+ax.set_xticklabels((xticks * 1000).astype(int))
+yticks = ax.get_yticks()
+ax.set_yticklabels(np.rint(yticks * 100).astype(int))
+ax.collections[0].set_label("CI (95%)")
+ax.legend()
+# xticks = np.asarray(sorted(df_single_source.target_segment_length.unique()))
+# g.set_xticks(range(len(xticks)), labels=(xticks * 1000).astype(int))
+# plt.savefig(title, dpi=400)
 
 # Confusion matrices
 cm_colour = metrics.confusion_matrix(df_multi_source["response_colour"], df_multi_source["target_colour"])
@@ -142,7 +163,7 @@ plt.axhline(y=0, linestyle="--", color="red", alpha=.2)
 plt.axvline(x=0.06, linestyle="--", color="lightgrey")
 ax = sns.lineplot(df_multi_source,
              x="masker_segment_length",
-             y="score_TM_diff",
+             y="score_TM_diff_normed",
              hue="task_plane",
              hue_order=["azimuth", "front-back", "elevation", "collocated"],
              palette=sns.color_palette("viridis", len(df_multi_source.task_plane.unique())),
