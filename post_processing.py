@@ -4,7 +4,7 @@ from analysis import load_df
 
 def run_post_processing(save=True):
     df = load_df()
-    speaker_table = pd.read_csv("speakertable_dome.csv")
+    # speaker_table = pd.read_csv("speakertable_dome.csv")
     stim_features = pd.read_csv("stim_features.csv")
 
     # Insert speaker locations
@@ -46,6 +46,7 @@ def run_post_processing(save=True):
     df["masker_duration"] = [find_feature(f, "duration") for f in df["masker_filename"]]
     df["masker_centroid"] = [find_feature(f, "centroid") for f in df["masker_filename"]]
     df["masker_flatness"] = [find_feature(f, "flatness") for f in df["masker_filename"]]
+    df["target_masker_duration_diff"] = df["target_duration"] - df["masker_duration"]
 
     df["reaction_time"] = df["response_time_diff"] - df[["target_duration", "masker_duration"]].max(axis=1)
 

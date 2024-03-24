@@ -6,16 +6,22 @@ from sklearn import metrics
 import statsmodels.formula.api as smf
 from post_processing import run_post_processing
 from scipy.stats import linregress, ttest_ind
+from pingouin import ancova
+import researchpy as rp
 
 sns.set_theme()
 palette_tab10 = sns.color_palette("tab10", 10)
+palette_viridis = sns.color_palette("viridis", 4)
 
 # df = run_post_processing()
 df = pd.read_csv("reversed_speech.csv")
 df_single_source = df[df["task_type"] == "single_source"]
 df_single_source = df_single_source[df_single_source["task_phase"] == "experiment"]
 df_multi_source = df[df["task_type"] == "multi_source"]
-df_multi_source["score_TM_diff_normed"] = None
+df_multi_source["score_TM_diff_normed"] = 0.0
+df_multi_source["score_d_prime_normed"] = 0.0
+df_multi_source["intelligibility_d_prime"] = 0.0
+df_multi_source["masker_intelligibility"] = 0.0
 
 df_multi_source_collocated = df_multi_source.groupby(["subject_id", "task_plane", "masker_segment_length"], as_index=False)["score_TM_diff"].mean()
 df_multi_source_collocated = df_multi_source_collocated[df_multi_source_collocated.task_plane == "collocated"]
@@ -27,6 +33,46 @@ for subject_id in df_multi_source.subject_id.unique():
             q_all = (df_multi_source.subject_id == subject_id) & (df_multi_source.task_plane == task_plane) & (df_multi_source.masker_segment_length == masker_segment_length)
             vals = df_multi_source.loc[q_all]["score_TM_diff"] - df_multi_source_collocated.loc[q_azi]["score_TM_diff"].values[0]
             df_multi_source.loc[q_all, "score_TM_diff_normed"] = vals.values.tolist()
+            df_multi_source.score_TM_diff_normed = df_multi_source.score_TM_diff_normed.astype(float)
+
+for subject_id in df_multi_source.subject_id.unique():
+    for task_plane in df_multi_source.task_plane.unique():
+        for masker_segment_length in df_multi_source.masker_segment_length.unique():
+            q_curr = (df_multi_source.subject_id == subject_id) & (df_multi_source.task_plane == task_plane) & (df_multi_source.masker_segment_length == masker_segment_length)
+            target_mean = df_multi_source[q_curr]["score"].mean()
+            target_std = df_multi_source[q_curr]["score"].std()
+            masker_mean = df_multi_source[q_curr]["score_masker"].mean()
+            masker_std = df_multi_source[q_curr]["score_masker"].std()
+            d_prime = (df_multi_source[q_curr]["score"] - df_multi_source[q_curr]["score_masker"]) / (np.sqrt((target_std ** 2 + masker_std ** 2) / 2))
+            df_multi_source.loc[q_curr, "score_d_prime"] = d_prime.values.tolist()
+
+df_multi_source_collocated = df_multi_source.groupby(["subject_id", "task_plane", "masker_segment_length"], as_index=False)["score_d_prime"].mean()
+df_multi_source_collocated = df_multi_source_collocated[df_multi_source_collocated.task_plane == "collocated"]
+
+for subject_id in df_multi_source.subject_id.unique():
+    for task_plane in df_multi_source.task_plane.unique():
+        for masker_segment_length in df_multi_source.masker_segment_length.unique():
+            q_collocated = (df_multi_source_collocated.subject_id == subject_id) & (df_multi_source_collocated.masker_segment_length == masker_segment_length)
+            q_all = (df_multi_source.subject_id == subject_id) & (df_multi_source.task_plane == task_plane) & (df_multi_source.masker_segment_length == masker_segment_length)
+            vals = df_multi_source.loc[q_all]["score_d_prime"] - df_multi_source_collocated.loc[q_collocated]["score_d_prime"].values[0]
+            df_multi_source.loc[q_all, "score_d_prime_normed"] = vals.values.tolist()
+            df_multi_source["score_d_prime_normed"] = df_multi_source["score_d_prime_normed"].astype(float)
+
+for subject_id in df_multi_source.subject_id.unique():
+    for masker_segment_length in df_multi_source.masker_segment_length.unique():
+        q_multi = (df_multi_source.subject_id == subject_id) & (df_multi_source.masker_segment_length == masker_segment_length)
+        q_single_masker = (df_single_source.subject_id == subject_id) & (df_single_source.target_segment_length == masker_segment_length)
+        q_single_target = (df_single_source.subject_id == subject_id) & (df_single_source.target_segment_length == 0.06)
+        masker_mean_intelligibility = df_single_source[q_single_masker]["score"].mean()
+        masker_std_intelligibility = df_single_source[q_single_masker]["score"].std()
+        target_mean_intelligibility = df_single_source[q_single_target]["score"].mean()
+        target_std_intelligibility = df_single_source[q_single_target]["score"].std()
+        intelligibility_d_prime = (df_multi_source[q_multi]["score"] - df_multi_source[q_multi]["score_masker"]) / (np.sqrt((target_std_intelligibility ** 2 + masker_std_intelligibility ** 2) / 2))
+        intelligibility_d_prime.replace([np.inf, -np.inf], np.nan, inplace=True)
+        # df_multi_source.loc[q_multi, "intelligibility_d_prime"] = intelligibility_d_prime.values.tolist()
+        df_multi_source.loc[q_multi, "masker_intelligibility"] = masker_mean_intelligibility.astype(float)
+        # df_multi_source.dropna(subset=["intelligibility_d_prime"], how="all", inplace=True)
+
 
 for subject_id in df_single_source.subject_id.unique():
     # subject_id = "sub_20"
@@ -87,6 +133,7 @@ cm_target_display = metrics.ConfusionMatrixDisplay(confusion_matrix=cm_target_nu
 cm_masker_display = metrics.ConfusionMatrixDisplay(confusion_matrix=cm_masker_number, display_labels=colour_labels)
 cm_target_display.plot()
 cm_masker_display.plot()
+plt.savefig("Confusion Matrix - Numbers", dpi=400)
 plt.show()
 
 fig, ax = plt.subplots(1, 4, sharey=True)
@@ -113,19 +160,21 @@ fig.legend(lines_labels[0], lines_labels[1], loc='center right')
 fig.supxlabel("Masker reversed segment duration (ms)")
 fig.supylabel('Intelligibility (%)')
 plt.ylim(0, 1.1)
-plt.suptitle('Target - Masker scores')
+plt.suptitle('Target + Masker scores')
+plt.savefig('Stacked Target and Masker scores', dpi=400)
 plt.show()
 
 
 # TARGET AND MASKER SCORES =====================================================================
 
 for subject_id in df.subject_id.unique():
-    subject_id = "sub_20"
-    df_sub = df_multi_source[(df.subject_id == subject_id)]
+    subject_id = "sub_06"
+    df_sub = df_multi_source[(df_multi_source.subject_id == subject_id)]
     g = sns.FacetGrid(df_multi_source, col="task_plane", sharey=True, sharex=True,
                       col_order=["collocated", "elevation", "front-back", "azimuth"], height=6, aspect=0.6)
-    g.map(sns.pointplot, "masker_segment_length", "score_masker", color=palette_tab10[1], capsize=0.05)
-    g.map(sns.pointplot, "masker_segment_length", "score", color=palette_tab10[0], capsize=0.05)
+    # g.map(sns.pointplot, "masker_segment_length", "score_masker", color=palette_tab10[1], capsize=0.05)
+    # g.map(sns.pointplot, "masker_segment_length", "score", color=palette_tab10[0], capsize=0.05)
+    g.map(sns.pointplot, "masker_segment_length", "score_d_prime", capsize=0.05)
     g.set_titles(template="{col_name}")
     title = f'Target and Masker scores in different spatial setups (n={len(df.subject_id.unique())})'
     # title = f'Target and Masker scores in different spatial setups ({subject_id})'
@@ -133,17 +182,40 @@ for subject_id in df.subject_id.unique():
     [h.set_color(palette_tab10[i]) for i, h in enumerate(g.legend.legendHandles)]
     g.set_xlabels(label="", clear_inner=True)
     g.set_ylabels(label='Correct (%)')
-    plt.ylim(0, 1)
+    # plt.ylim(0, 1)
     g.fig.subplots_adjust(top=0.85)
     g.fig.suptitle(title)
     g.fig.supxlabel("Masker segment duration (ms)", fontsize=13)
     xticks = np.asarray(sorted(df.masker_segment_length.dropna().unique()))
     g.set_xticklabels((xticks * 1000).astype(int))
-    yticks = g.axes[0][0].get_yticks()
-    g.axes[0][0].set_yticklabels((yticks * 100).astype(int))
-    plt.savefig(title, dpi=400)
+    # yticks = g.axes[0][0].get_yticks()
+    # g.axes[0][0].set_yticklabels((yticks * 100).astype(int))
+    # plt.savefig(title, dpi=400)
 
-# =================================================================================================
+# D PRIME SCORES =================================================================================================
+hue_order = ["azimuth", "front-back", "elevation", "collocated"]
+g = sns.FacetGrid(df_multi_source, col="task_plane", sharey=True, sharex=True, hue="task_plane",
+                  hue_order=hue_order, palette=palette_viridis,
+                  col_order=hue_order[::-1], height=6, aspect=0.6)
+g.map(sns.pointplot, "masker_segment_length", "score_d_prime", capsize=0.05)
+g.set_titles(template="{col_name}")
+title = f'Attention score in different spatial setups (n={len(df.subject_id.unique())})'
+g.set_xlabels(label="", clear_inner=True)
+g.set_ylabels(label="d' (target, masker)")
+g.fig.subplots_adjust(top=0.85)
+g.fig.suptitle(title)
+g.fig.supxlabel("Masker segment duration (ms)", fontsize=13)
+xticks = np.asarray(sorted(df.masker_segment_length.dropna().unique()))
+g.set_xticklabels((xticks * 1000).astype(int))
+
+# D PRIME PER SUBJECT ===================================================================================
+
+sns.lmplot(df_multi_source, col="task_plane", hue="subject_id", x="masker_segment_length", y="score_d_prime",
+           col_order=hue_order[::-1], sharey=True, scatter=False, logx=True, ci=95,
+           palette=sns.color_palette(['lightgrey']), line_kws={"alpha": 0.01}, height=6, aspect=0.6
+           )
+
+# ======================================================================================
 
 g = sns.FacetGrid(df[df.block_index == 1], col="task_plane", sharey=True, sharex=True,
                   col_order=["collocated", "elevation", "front-back", "azimuth"], height=6, aspect=0.6)
@@ -163,7 +235,7 @@ plt.axhline(y=0, linestyle="--", color="red", alpha=.2)
 plt.axvline(x=0.06, linestyle="--", color="lightgrey")
 ax = sns.lineplot(df_multi_source,
              x="masker_segment_length",
-             y="score_TM_diff_normed",
+             y="score_d_prime_normed",
              hue="task_plane",
              hue_order=["azimuth", "front-back", "elevation", "collocated"],
              palette=sns.color_palette("viridis", len(df_multi_source.task_plane.unique())),
@@ -174,14 +246,14 @@ ax = sns.lineplot(df_multi_source,
              )
 ax.grid(False, axis="x")
 plt.legend(title='spatial setup')
-title = f"Target - Masker Difference Scores (n={len(df_multi_source.subject_id.unique())})"
+title = f"Spatial Advantage (n={len(df_multi_source.subject_id.unique())})"
 plt.title(title, fontsize=20)
-ax.set(xlabel='Masker segment duration (ms)', ylabel='Target - Masker Difference Score (%)')
+ax.set(xlabel='Masker segment duration (ms)', ylabel="d' (target, masker)")
 ax.set_xticks(np.asarray(sorted(df.masker_segment_length.dropna().unique())))
 xticks = ax.get_xticks()
 ax.set_xticklabels((xticks * 1000).astype(int))
-yticks = ax.get_yticks()
-ax.set_yticklabels(np.rint(yticks * 100).astype(int))
+# yticks = ax.get_yticks()
+# ax.set_yticklabels(np.rint(yticks * 100).astype(int))
 # plt.savefig(title, dpi=400)
 
 # REACTION TIME =======================================================================================
@@ -196,7 +268,7 @@ g.fig.suptitle(title)
 g.fig.supxlabel("Masker segment duration (ms)", fontsize=13)
 xticks = np.asarray(sorted(df.masker_segment_length.dropna().unique()))
 g.set_xticklabels((xticks * 1000).astype(int))
-# plt.savefig(title, dpi=400)
+plt.savefig("figures/" + title, dpi=400)
 
 
 g = sns.FacetGrid(df, col="task_plane", sharey=True, sharex=True,
