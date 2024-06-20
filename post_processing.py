@@ -5,7 +5,7 @@ from analysis import load_df
 def run_post_processing(save=True):
     df = load_df()
     # speaker_table = pd.read_csv("speakertable_dome.csv")
-    stim_features = pd.read_csv("stim_features.csv")
+    stim_features = pd.read_csv("data/tables/stim_features.csv")
 
     # Insert speaker locations
     df.loc[df["target_speaker_chan"] == 1, ['target_speaker_azi', 'target_speaker_ele']] = 0, 0

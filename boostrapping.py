@@ -15,7 +15,7 @@ df_multi_source = df[df["task_type"] == "multi_source"]
 
 
 # MINIMUM NUMBER OF PARTICIPANTS AND TRIALS PER CONDITION FOR SINGLE SOURCE ===========================
-output_path = "bs_single_source_linreg.csv"
+output_path = "data/tables/bs_single_source_linreg.csv"
 df_bs_single_source_linreg = pd.DataFrame(columns=["n_subjects", "trials_per_condition", "slope", "pvalue", "rvalue"])
 n_conditions = len(df_single_source.target_segment_length.unique())
 bs_rows = []
@@ -42,7 +42,7 @@ for n_subjects in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
             df_row.to_csv(output_path, mode='a', header=not os.path.exists(output_path))
 
 # MINIMUM NUMBER OF PARTICIPANTS AND TRIALS PER CONDITION FOR MULTIPLE SOURCE ===========================
-output_path = "bs_multi_source_linreg.csv"
+output_path = "data/tables/bs_multi_source_linreg.csv"
 df_bs_multi_source_linreg = pd.DataFrame(columns=["n_subjects", "trials_per_condition", "task_plane", "score_type",
                                                    "slope", "pvalue", "rvalue"])
 n_conditions = len(df_single_source.masker_segment_length.unique())
