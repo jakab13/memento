@@ -1,5 +1,7 @@
 import pandas as pd
+import os
 from analysis import load_df
+tables_folderpath = "data/tables/"
 
 
 def run_post_processing(save=True):
@@ -54,5 +56,10 @@ def run_post_processing(save=True):
 
     if save:
         df.to_csv("reversed_speech.csv")
+
+    for subject_id in df.subject_id.unique():
+        df_sub = df[df.subject_id == subject_id]
+        filename = tables_folderpath + subject_id + "_reversed_speech.csv"
+        df_sub.to_csv(filename, header=not os.path.exists(filename))
 
     return df

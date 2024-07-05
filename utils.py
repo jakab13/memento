@@ -12,8 +12,8 @@ slab.Sound.set_default_samplerate(48828)
 
 
 def reverse_sound(sound, segment_length, overlap=0.005):
-    if segment_length == 0:
-        return sound
+    if segment_length == 0 or segment_length is None:
+        return sound, None
     segment_length = slab.Signal.in_samples(segment_length, sound.samplerate)
     overlap = int(overlap * sound.samplerate)
     reversed_sound = slab.Binaural.silence(duration=sound.n_samples, samplerate=sound.samplerate)

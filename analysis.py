@@ -14,12 +14,12 @@ results_folder = pathlib.Path(os.getcwd()) / "Results"
 
 
 def load_df():
-    subjects_excl = ["holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant"]
+    subjects_excl = ["holubowska", "jakab", "gina", "pilot_paul", "pilot_varvara", "pilot_carsten", "pilot_sasha", "redundant", "sub_jakab_eeg"]
 
     subjects = [s for s in os.listdir(results_folder) if not s.startswith('.')]
     subjects = sorted([s for s in subjects if not any(s in excl for excl in subjects_excl)])
 
-    results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.')] for s in subjects}
+    results_files = {s: [f for f in sorted(os.listdir(results_folder / s)) if not f.startswith('.') and f.endswith(".txt")] for s in subjects}
 
     columns = ["subject_id", "task_type", "task_phase", "task_plane", "task_level", "block_index",
                "trial_timestamp", "trial_index",

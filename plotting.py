@@ -14,7 +14,7 @@ import researchpy as rp
 palette_tab10 = sns.color_palette("tab10", 10)
 palette_viridis = sns.color_palette("viridis", 4)
 
-# df = run_post_processing()
+# df = run_post_processing(save=True)
 df = pd.read_csv("data/tables/reversed_speech.csv")
 df_single_source = df[df["task_type"] == "single_source"]
 df_single_source = df_single_source[df_single_source["task_phase"] == "experiment"]
